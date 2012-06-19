@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="drupal" default="build">
+  <property file="${basedir}/build.properties"/>
+  <property name="buildroot" location="${basedir}/${basepath}"/> 
+  <property name="logdir" location="${buildroot}/build/logs"/>
+  <property name="tooldir" location="${buildroot}/build/tools"/>
+  <property name="strict-mode" value="false"/>
+
+  <!-- Build a comma separated list of the directories to validate & analyse, if they exist -->
+  <dirset id="codedirs" dir="${buildroot}">
+    <include name="${drupal.modules}"/>
+    <include name="${drupal.features}"/>
+    <include name="${drupal.themes}"/>
+  </dirset>
+
+  <!-- Main targets -->
+  <target name="build" depends="clean_artifacts,verify"/>
+  <target name="verify" depends="clean_artifacts,css-lint"/>
+  <target name="analyse" depends="clean_artifacts"/>
+  <target name="make_install" depends="clean_code,drush_make,drush_siteinstall"/>
+
+  <!-- Sub targets -->
+  <target name="clean_artifacts">
+    <delete dir="${logdir}"/>
+    <mkdir dir="${logdir}"/>
+  </target>
+
+  <target name="clean_code">
+    <delete dir="${buildroot}/${drupal.docroot}"/>
+  </target>
+
+  <!-- LINT: PHP -->
+  <target name="php-lint" description="Perform syntax check of php files">
+    <property name="php_files" value="**/*.php,**/*.inc,**/*.module,**/*.install,**/*.profile"/>
+    <apply executable="${php.bin}" failonerror="${strict-mode}">
+      <arg value="-l" />
+      <!-- We should be able to build this for the codedirs dirset above -->
+      <fileset dir="${buildroot}/${drupal.modules}" includes="${php_files}"/>
+      <fileset dir="${buildroot}/${drupal.features}" includes="${php_files}"/>
+      <fileset dir="${buildroot}/${drupal.themes}" includes="${php_files}"/> 
+    </apply>
+  </target>
+
+  <!-- LINT: JS -->
+  <target name="js-lint" description="Perform style and syntax check of js files">
+    <pathconvert refid="codedirs" property="jslint-codedirs" pathsep=" "/>
+    <exec executable="${jshint.bin}" failonerror="${strict-mode}" output="${logdir}/jshint.xml">
+      <arg value="--config"/>
+      <arg value="${tooldir}/jshint/jshint.json"/>
+      <arg value="--jslint-reporter"/>
+      <arg line="${jslint-codedirs}"/>
+    </exec>
+  </target>
+
+  <!-- LINT: CSS -->
+  <!-- In construction: just testing stuff out -->
+  <target name="css-lint" description="Perform style and syntax check of css files">
+    <pathconvert refid="codedirs" property="csslint.codedirs" pathsep=" "/>
+    <loadfile srcFile="${tooldir}/csslint/csslint.rules" property="csslint.rules">
+      <filterchain>
+        <tokenfilter>
+          <deletecharacters chars=" "/>
+        </tokenfilter>
+        <striplinebreaks/>
+      </filterchain>
+    </loadfile>
+    <echo message="${csslint.rules}"/>
+  </target>
+
+  <!-- PHP: Mess Detector -->
+  <target name="phpmd">
+    <exec executable="${php.phpmd_bin}">
+      <!-- We should include the feature directory also, but it blocks phpmd for some reason -->
+      <arg value="${buildroot}${drupal.modules}"/>
+      <arg value="xml"/>
+      <arg value="design,codesize,naming"/>
+      <arg value="${php.ext}" prefix="--suffixes "/>
+      <!-- We can use prefix="" for some reason (it gets ignored), so just to something simpler-->
+      <arg value="--reportfile"/>
+      <arg value="${logdir}/phpmd.xml"/>
+    </exec>
+  </target>
+
+
+  <!-- DRUSH: MAKE -->
+  <target name="drush_make">
+    <exec executable="${drush.bin}" failonerror="true">
+      <arg value="make"/>
+      <!-- TODO: add language support -->
+      <arg value="${drush.makefile}"/>
+      <arg value="${buildroot}/${drupal.docroot}"/>
+    </exec>
+  </target>
+
+
+  <!-- DRUSH: INSTALL -->
+  <target name="drush_siteinstall">
+    <exec executable="${drush.bin}" 
+          failonerror="true"
+          dir="${buildroot}/${drupal.docroot}">
+      <!-- TODO: add language support -->
+      <arg value="site-install"/>
+      <arg value="${drush.install_profile}"/>
+      <arg value="--db-url=${drush.mysql}"/>
+      <arg value="--account-name=${drush.uname}"/>
+      <arg value="--account-pass=${drush.upwd}"/>
+      <arg value="--site-name=${drush.sitename}"/>
+      <arg value="-y"/>
+    </exec>
+  </target>
+</project>
+
