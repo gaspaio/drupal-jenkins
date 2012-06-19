@@ -28,4 +28,4 @@ Most options are not really usefull, since they enforce one view of CSS rather t
 Some of them are practical and, at the very least, CSSLint checks the syntax.
 
 The Ant task for CSSLinting reads the options for the file build/tools/csslint/csslint.rules and generates the command line.
-* see www.csslint.com for option descriptions, install instructions, etc.
+* see www.csslint.net for option descriptions, install instructions, etc.
