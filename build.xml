@@ -54,18 +54,23 @@
   </target>
 
   <!-- LINT: CSS -->
-  <!-- In construction: just testing stuff out -->
   <target name="css-lint" description="Perform style and syntax check of css files">
     <pathconvert refid="codedirs" property="csslint.codedirs" pathsep=" "/>
     <loadfile srcFile="${tooldir}/csslint/csslint.rules" property="csslint.rules">
       <filterchain>
-        <tokenfilter>
-          <deletecharacters chars=" "/>
-        </tokenfilter>
         <striplinebreaks/>
+        <trim/>
       </filterchain>
     </loadfile>
     <echo message="${csslint.rules}"/>
+    <exec executable="${csslint.bin}" 
+          failonerror="${strict-mode}"
+          output="${logdir}/csslint.xml">
+      <!-- These seems to be a bug in CSSLint : the rules argument causes the output format to be ignored. -->
+      <arg value="--warnings=${csslint.rules}"/>
+      <arg value="--format=lint-xml"/>
+      <arg line="${csslint.codedirs}"/> 
+    </exec>
   </target>
 
   <!-- PHP: Mess Detector -->
