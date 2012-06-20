@@ -17,9 +17,11 @@
   </dirset>
 
   <!-- filesets for all parsable PHP files -->
-  <property name="php_files" value="**/*.php,**/*.inc,**/*.module,**/*.install,**/*.profile,**/*.test"/>
-  <fileset id="phpcustom.modules" dir="${buildroot}/${drupal.modules}" includes="${php_files}"/>
-  <fileset id="phpcustom.features" dir="${buildroot}/${drupal.features}" includes="${php_files}">
+  <property name="php.patterns" value="**/*.php,**/*.inc,**/*.module,**/*.install,**/*.profile,**/*.test"/>
+  <property name="php.ext_exclude" value="features.inc,views_default.inc,layouts.inc,pages_default.inc,panels_default.inc,strongarm.inc,field_group.inc,features.field.inc"/>
+  <property name="php.ext" value="php,inc,module,install,profile"/>
+  <fileset id="phpcustom.modules" dir="${buildroot}/${drupal.modules}" includes="${php.patterns}"/>
+  <fileset id="phpcustom.features" dir="${buildroot}/${drupal.features}" includes="${php.patterns}">
     <exclude name="**/*.features.inc"/>
     <exclude name="**/*.views_default.inc"/>
     <exclude name="**/*.layouts.inc"/>
@@ -29,18 +31,17 @@
     <exclude name="**/*.field_group.inc"/>
     <exclude name="**/*.features.*.inc"/>
   </fileset>
-  <fileset id="phpcustom.theme" dir="${buildroot}/${drupal.themes}" includes="${php_files}"/>
+  <fileset id="phpcustom.theme" dir="${buildroot}/${drupal.themes}" includes="${php.pattenrs}"/>
 
 
   <!-- MAIN TARGETS -->
   <target name="build" depends="clean_artifacts,verify"/>
-  <target name="verify" depends="clean_artifacts,phpmd"/>
+  <target name="verify" depends="clean_artifacts,phpcpd"/>
   <target name="analyse" depends="clean_artifacts"/>
   <target name="make_install" depends="clean_code,drush_make,drush_siteinstall"/>
 
 
   <!-- SUB TARGETS -->
-  <!-- ----------- -->
   <target name="clean_artifacts">
     <delete dir="${logdir}"/>
     <mkdir dir="${logdir}"/>
@@ -93,14 +94,27 @@
 
   <!-- PHP: Mess Detector -->
   <target name="phpmd">
-    <pathconvert refid="phpcustom.features" property="phpcustom.line" pathsep=","/>
+    <pathconvert refid="phpcustom.features" property="phpcustom.commaline" pathsep=","/>
     <exec executable="${php.phpmd_bin}">
-      <arg value="${buildroot}/${drupal.modules},${phpcustom.line},${buildroot},${drupal.modules}"/>
+      <arg value="${buildroot}/${drupal.modules},${phpcustom.commaline},${buildroot}/${drupal.modules}"/>
       <arg value="xml"/>
       <arg value="design,codesize,naming"/>
       <arg value="${php.ext}" prefix="--suffixes "/>
       <arg value="--reportfile"/>
       <arg value="${logdir}/phpmd.xml"/>
+    </exec>
+  </target>
+  
+  <!-- PHP: Copy paste detector -->
+  <target name="phpcpd">
+    <pathconvert refid="phpcustom.features" property="phpcustom.spaceline" pathsep=" "/>
+    <exec executable="${php.phpcpd_bin}">
+      <arg value="log-pmd"/>
+      <arg value="${logdir}/phpcpd.xml"/>
+      <arg value="--suffixes"/>
+      <arg value="${php.ext}"/>
+      <arg line="${buildroot}/${drupal.modules} ${buildroot}/${drupal.themes}"/>
+      <arg line="${phpcustom.spaceline}"/>
     </exec>
   </target>
 
