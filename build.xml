@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="drupal" default="build">
+<project name="drupal" default="build_static">
 
   <!-- UTILITY PROPERTIES AND SETS -->
   <property file="${basedir}/build.properties"/>
@@ -35,9 +35,9 @@
 
 
   <!-- MAIN TARGETS -->
-  <target name="build" depends="clean_artifacts,verify,analyse"/>
-  <target name="verify" depends="clean_artifacts,php-lint,js-lint,css-lint"/>
-  <target name="analyse" depends="clean_artifacts,phpmd,phpcpd"/>
+  <target name="build_static" depends="clean_artifacts,verify_static,analyse_static"/>
+  <target name="verify_static" depends="clean_artifacts,js-lint,css-lint"/>
+  <target name="analyse_static" depends="clean_artifacts,phpmd,phpcpd"/>
   <target name="make_install" depends="clean_code,drush_make,drush_siteinstall"/>
 
 
