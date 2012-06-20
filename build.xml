@@ -31,13 +31,13 @@
     <exclude name="**/*.field_group.inc"/>
     <exclude name="**/*.features.*.inc"/>
   </fileset>
-  <fileset id="phpcustom.theme" dir="${buildroot}/${drupal.themes}" includes="${php.pattenrs}"/>
+  <fileset id="phpcustom.theme" dir="${buildroot}/${drupal.themes}" includes="${php.patterns}"/>
 
 
   <!-- MAIN TARGETS -->
-  <target name="build" depends="clean_artifacts,verify"/>
-  <target name="verify" depends="clean_artifacts,phpcpd"/>
-  <target name="analyse" depends="clean_artifacts"/>
+  <target name="build" depends="clean_artifacts,verify,analyse"/>
+  <target name="verify" depends="clean_artifacts,php-lint,js-lint,css-lint"/>
+  <target name="analyse" depends="clean_artifacts,phpmd,phpcpd"/>
   <target name="make_install" depends="clean_code,drush_make,drush_siteinstall"/>
 
 
@@ -81,7 +81,6 @@
         <trim/>
       </filterchain>
     </loadfile>
-    <echo message="${csslint.rules}"/>
     <exec executable="${csslint.bin}" 
           failonerror="${strict-mode}"
           output="${logdir}/csslint.xml">
@@ -109,7 +108,7 @@
   <target name="phpcpd">
     <pathconvert refid="phpcustom.features" property="phpcustom.spaceline" pathsep=" "/>
     <exec executable="${php.phpcpd_bin}">
-      <arg value="log-pmd"/>
+      <arg value="--log-pmd"/>
       <arg value="${logdir}/phpcpd.xml"/>
       <arg value="--suffixes"/>
       <arg value="${php.ext}"/>
