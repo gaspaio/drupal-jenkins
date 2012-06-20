@@ -1,26 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project name="drupal" default="build">
+
+  <!-- UTILITY PROPERTIES AND SETS -->
   <property file="${basedir}/build.properties"/>
   <property name="buildroot" location="${basedir}/${basepath}"/> 
   <property name="logdir" location="${buildroot}/build/logs"/>
   <property name="tooldir" location="${buildroot}/build/tools"/>
   <property name="strict-mode" value="false"/>
 
-  <!-- Build a comma separated list of the directories to validate & analyse, if they exist -->
+  <!-- dirsets for out custom code directories, if they exist -->
   <dirset id="codedirs" dir="${buildroot}">
     <include name="${drupal.modules}"/>
     <include name="${drupal.features}"/>
     <include name="${drupal.themes}"/>
   </dirset>
 
-  <!-- Main targets -->
+  <!-- filesets for all parsable PHP files -->
+  <property name="php_files" value="**/*.php,**/*.inc,**/*.module,**/*.install,**/*.profile,**/*.test"/>
+  <fileset id="phpcustom.modules" dir="${buildroot}/${drupal.modules}" includes="${php_files}"/>
+  <fileset id="phpcustom.features" dir="${buildroot}/${drupal.features}" includes="${php_files}">
+    <exclude name="**/*.features.inc"/>
+    <exclude name="**/*.views_default.inc"/>
+    <exclude name="**/*.layouts.inc"/>
+    <exclude name="**/*.pages_default.inc"/>
+    <exclude name="**/*.panels_default.inc"/>
+    <exclude name="**/*.strongarm.inc"/>
+    <exclude name="**/*.field_group.inc"/>
+    <exclude name="**/*.features.*.inc"/>
+  </fileset>
+  <fileset id="phpcustom.theme" dir="${buildroot}/${drupal.themes}" includes="${php_files}"/>
+
+
+  <!-- MAIN TARGETS -->
   <target name="build" depends="clean_artifacts,verify"/>
-  <target name="verify" depends="clean_artifacts,css-lint"/>
+  <target name="verify" depends="clean_artifacts,phpmd"/>
   <target name="analyse" depends="clean_artifacts"/>
   <target name="make_install" depends="clean_code,drush_make,drush_siteinstall"/>
 
-  <!-- Sub targets -->
+
+  <!-- SUB TARGETS -->
+  <!-- ----------- -->
   <target name="clean_artifacts">
     <delete dir="${logdir}"/>
     <mkdir dir="${logdir}"/>
@@ -32,13 +52,11 @@
 
   <!-- LINT: PHP -->
   <target name="php-lint" description="Perform syntax check of php files">
-    <property name="php_files" value="**/*.php,**/*.inc,**/*.module,**/*.install,**/*.profile"/>
     <apply executable="${php.bin}" failonerror="${strict-mode}">
       <arg value="-l" />
-      <!-- We should be able to build this for the codedirs dirset above -->
-      <fileset dir="${buildroot}/${drupal.modules}" includes="${php_files}"/>
-      <fileset dir="${buildroot}/${drupal.features}" includes="${php_files}"/>
-      <fileset dir="${buildroot}/${drupal.themes}" includes="${php_files}"/> 
+      <fileset refid="phpcustom.modules"/>
+      <fileset refid="phpcustom.features"/>
+      <fileset refid="phpcustom.theme"/>
     </apply>
   </target>
 
@@ -75,13 +93,12 @@
 
   <!-- PHP: Mess Detector -->
   <target name="phpmd">
+    <pathconvert refid="phpcustom.features" property="phpcustom.line" pathsep=","/>
     <exec executable="${php.phpmd_bin}">
-      <!-- We should include the feature directory also, but it blocks phpmd for some reason -->
-      <arg value="${buildroot}${drupal.modules}"/>
+      <arg value="${buildroot}/${drupal.modules},${phpcustom.line},${buildroot},${drupal.modules}"/>
       <arg value="xml"/>
       <arg value="design,codesize,naming"/>
       <arg value="${php.ext}" prefix="--suffixes "/>
-      <!-- We can use prefix="" for some reason (it gets ignored), so just to something simpler-->
       <arg value="--reportfile"/>
       <arg value="${logdir}/phpmd.xml"/>
     </exec>
