@@ -24,7 +24,7 @@ $ jshint --config jshint.json <my-js-dir>
 CSSLint
 --------
 Syntax and style validation for css files.
-Most options are not really usefull, since they enforce one view of CSS rather than communly accepted best practices.
+Most options are not really usefull, since they enforce one view of CSS rather than commonly accepted best practices.
 Some of them are practical and, at the very least, CSSLint checks the syntax.
 
 The Ant task for CSSLinting reads the options for the file build/tools/csslint/csslint.rules and generates the command line.
